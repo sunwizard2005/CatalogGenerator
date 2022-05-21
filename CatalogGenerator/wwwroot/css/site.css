@@ -1,0 +1,137 @@
+/*html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+*/
+
+body {
+    font: 14px "Helvetica Neue",Arial,Helvetica,sans-serif;
+}
+
+div.desc {
+    white-space: pre-wrap;
+}
+
+table.plant-table {
+    width: 100%;
+    page-break-inside: avoid;
+}
+
+table table { margin: 10px }
+
+th { text-align: center }
+
+td.photo {
+    width: 1%;
+    max-width: 150px;
+}
+
+td.attrib {
+    vertical-align: top;
+}
+
+td.desc {
+    vertical-align: top;
+}
+
+td.country {
+    height: 100%;
+    vertical-align: bottom;
+}
+
+img.photo {
+    max-width: 150px;
+    max-height: 150px;
+}
+
+img {
+    vertical-align: middle;
+}
+
+span.temperature img {
+    height: 50px;
+}
+
+span.light img {
+    height: 25px;
+}
+
+span.bud img {
+    height: 25px;
+}
+
+span.misc img {
+    height: 25px;
+}
+
+span.tag {
+    border-radius: 3px;
+    box-sizing: border-box;
+    display: inline;
+    height: 30px;
+    line-height: 30px;
+    margin: 0 0 4px 4px;
+    min-width: 40px;
+    padding: 0 10px;
+    width: auto;
+    color: #fff;
+    font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    position: relative;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 5px rgba(0,0,0,.2),0 0 2px #000;
+    white-space: nowrap;
+}
+
+span.size {
+    background-color: #c377e0;
+}
+
+span.format {
+    background-color: #E2725B;
+}
+
+span.water {
+    background-color: #0079bf;
+}
+
+img.logo {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    height: 250px;
+}
+
+h1 {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    width: 100%;
+    border-bottom: 1px #4F81BD solid;
+}
+
+h3 {
+    border-top: 1px #4F81BD solid;
+}
+
+div.columns2 {
+    column-count: 2;
+    column-rule: 1px #4F81BD solid;
+}
+
+div.columns3 {
+    column-count: 3;
+    column-gap: 5px;
+    page-break-inside: avoid;
+}

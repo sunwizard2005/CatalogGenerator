@@ -1,0 +1,168 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "The Atlanta Orchid Society - 2022 Spring Auction";
+}
+
+<div class="columns2">
+    <img class="logo" src="logo.png" />
+    <h1>2022 Spring Auction</h1>
+
+    <h2>1. Introduction</h2>
+    <p>
+        Welcome to the @(Model.AuctionName).  The auction represents one of the Atlanta
+        Orchid Society’s main fundraising events, which helps fund our annual show and
+        sale in the spring, as well as our monthly educational programs.
+    </p>
+
+    <p>
+        This year, Mark Reinke has put together a nice collection of plants from the
+        Cattleya, Cypripedium, and Dendrobium alliances.  In this booklet, we have pulled
+        together an alphabetical list with pictures and basic cultural information for some
+        of the plants that will be up for auction.  Not everything available is in this book,
+        and some items that are in this book might not be auctioned off tonight due to either
+        time constraints or some other reasons. Mark Reinke is our Auctioneer again this
+        year.
+    </p>
+
+    <p>
+        A digital copy of this booklet may be obtained by emailing Jason Mills.  It
+        is also available online at <a href="http://www.twyst.org/atlos/spring-2022">
+            http://www.twyst.org/atlos/spring-2022
+        </a>
+    </p>
+
+    <h2>2. Acknowledgements</h2>
+    <p>
+        Many of the plants were either donated to the Society, or provided to us at a
+        significant discount. Some of the people and businesses involved in helping us
+        with the auction this year include, but are not limited to, the following. Thank you
+        to everyone who donated or who is helping with the auction.
+    </p>
+
+    <div class="columns3">
+        <ul>
+            <li>Mark Reinke &amp; Gary Collier, Marble Branch Farms</li>
+            <li>Peach State Orchids</li>
+            <li>Danny Lentz &amp; Dianne Morgan</li>
+            <li>David Mellard</li>
+            <li>Atlanta Botanical Gardens</li>
+            <li>Windy Hill Gardens</li>
+            <li>Geni Smith</li>
+            <li>Linda Miller</li>
+            <li>Richard Hallberg</li>
+            <li>Carson Barnes</li>
+        </ul>
+    </div>
+
+    <h2>3. Disclaimers</h2>
+    <p>
+        We do not claim ownership of the photos used in this booklet, and believe
+        this work to be in compliance with fair use exclusions.
+    </p>
+
+    <p>
+        Cultural information is a basic guideline and may or may not be accurate.
+        Please validate any of the information herein with your own research and the
+        conditions of your growing space.
+    </p>
+
+    <h2>4. Icon Keys</h2>
+    <table>
+        <tr><th>Temperature</th><th>Other</th></tr>
+        <tr>
+            <td id="temperature" class="desc">
+                <table>
+                    @{
+                        foreach (var t in Model.VisibleTemperatureLabels)
+                        {
+                            <tr><td>@Html.Raw(t.HTML)</td><td>@t.Description</td></tr>
+                        }
+                    }
+                </table>
+            </td>
+            <td id="other" class="desc">
+                <table>
+                    @{
+                        foreach (var l in Model.VisibleMiscLabels)
+                        {
+                            <tr><td>@Html.Raw(l.HTML)</td><td>@l.Description</td></tr>
+                        }
+                    }
+                </table>
+            </td>
+        </tr>
+        <tr><th>Light</th><th>Watering</th></tr>
+        <tr>
+            <td id="light" class="desc">
+                <table>
+                    @{
+                        foreach (var l in Model.VisibleLightingLabels)
+                        {
+                            <tr><td>@Html.Raw(l.HTML)</td><td>@l.Description</td></tr>
+                        }
+                    }
+                </table>
+            </td>
+            <td id="water" class="desc">
+                <table>
+                    @{
+                        foreach (var l in Model.VisibleWateringLabels)
+                        {
+                            <tr><td>@Html.Raw(l.HTML)</td><td>@l.Description</td></tr>
+                        }
+                    }
+                </table>
+            </td>
+        </tr>
+        <tr><td>&nbsp;</td></tr>
+    </table>
+
+    <h2>5. Plant List</h2>
+    <div id="plants">
+        @{
+            foreach (var val in Model.Cards)
+            {
+                <table class="plant-table">
+                    <tr>
+                        <td colspan="2">
+                            <h3>@val.Name</h3>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="photo" rowspan="3">
+                            @if (val.Attachments.Any())
+                            {
+                                <img class="photo" src="@val.Attachments.First().Url" />
+                            }
+                        </td>
+                        <td class="attrib">
+                            @{
+                                foreach (var label in Model.GetBloomingLabels()
+                                    .Union(Model.GetTemperatureLabels())
+                                    .Union(Model.GetLightingLabels())
+                                    .Union(Model.GetWateringLabels())
+                                    .Union(Model.GetSizeLabels())
+                                    .Union(Model.GetFormatLabels()))
+                                {
+                                    if (val.LabelIds.Contains(label.Id))
+                                    {
+                                        @Html.Raw(label.HTML)
+                                    }
+                                }
+                            }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="desc">
+                                <div class="desc">@val.Description</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="country"></td>
+                        </tr>
+                    </table>
+            }
+        }
+    </div>
+</div>
