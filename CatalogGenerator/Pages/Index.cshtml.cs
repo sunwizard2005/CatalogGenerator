@@ -106,13 +106,15 @@ namespace CatalogGenerator.Pages
             }
         }
 
-        public IEnumerable<Card> Cards => GetCatalogCards();
+        public IEnumerable<Card> Cards => GetCatalogCards().OrderBy(c => c.Name);
 
         public IEnumerable<Card> GetCatalogCards()
         {
             foreach (var card in _catalog.Cards)
             {
                 if (IgnoreBoardLists.Contains(card.ListId)) continue;
+                if (card.Closed) continue;
+
                 yield return new Card
                 {
                     Name = card.Name,

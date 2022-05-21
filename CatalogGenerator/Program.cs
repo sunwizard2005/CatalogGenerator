@@ -11,6 +11,8 @@ using System.Net.Http;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,38 +20,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddTransient(s =>
 {
-    string catalogSource;// = File.ReadAllText("test-catalog.json");
-    //catalogSource = Task.Run(() =>
-    //{
-    //    async Task<string> GetURL()
-    //    {
-    //
-    //
-    //        using HttpClient client = new HttpClient(new HttpClientHandler
-    //        {
-    //            PreAuthenticate = true,
-    //            UseDefaultCredentials = true, AllowAutoRedirect = true,
-    //            UseCookies = true,
-    //            SslProtocols = SslProtocols.Tls12
-    //        });
-    //        try
-    //        {
-    //            var a = await client.GetStringAsync("https://trello.com/b/S9VlWoZn.json");
-    //            return a;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            throw;
-    //        }
-    //
-    //    }
-    //
-    //    return GetURL();
-    //}).Result;
+    CatalogSettings settings = s.GetRequiredService<IOptions<CatalogSettings>>().Value;
+
+
     RestClient client = new RestClient("https://trello.com");
-    RestRequest request = new RestRequest("/b/S9VlWoZn.json", Method.GET);
-    var response = client.Execute(request);
-    catalogSource = response.Content;
+    RestRequest request = new RestRequest($"/b/{settings.TrelloId}.json", Method.GET);
+    var response = client.Execute(request); // ????? How about error handling?
+
+    string catalogSource = response.Content;
 
     Catalog catalog = JsonSerializer.Deserialize<Catalog>(catalogSource) ?? throw new Exception("Unable to load catalog");
     return catalog;
@@ -68,6 +46,11 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseAuthorization();
 

@@ -25,7 +25,8 @@ namespace CatalogGenerator
         public string ListId { get; set; }
         [JsonPropertyName("idLabels")]
         public IEnumerable<string> LabelIds { get; set; }
-
+        [JsonPropertyName("closed")]
+        public bool Closed { get; set; }
         [JsonPropertyName("desc")]
         public string? Description { get; set; }
         [JsonPropertyName("attachments")]
