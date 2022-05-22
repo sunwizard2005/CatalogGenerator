@@ -124,7 +124,7 @@ namespace CatalogGenerator.Pages
                                   {
                                       Url = a.Url
                                   },
-                    LabelIds = card.LabelIds
+                    LabelIds = card.LabelIds ?? new List<string>()
                 };
             }
         }
@@ -144,5 +144,47 @@ namespace CatalogGenerator.Pages
                 }
             }
         }
+
+        public string IntroductionText => GetIntroductionText();
+        public string AcknowledgementText => GetAcknowledgementText();
+        public string DisclaimersText => GetDisclaimersText();
+        public IEnumerable<string> AcknowledgementList => GetAcknowledgementList();
+
+        public string GetIntroductionText()
+        {
+            return GetCardDescription(_catalogSettings.Overview.List, _catalogSettings.Overview.IntroductionCard);
+        }
+
+        public string GetAcknowledgementText()
+        {
+            return GetCardDescription(_catalogSettings.Overview.List, _catalogSettings.Overview.AcknowledgementCard);
+        }
+
+        public string GetDisclaimersText()
+        {
+            return GetCardDescription(_catalogSettings.Overview.List, _catalogSettings.Overview.IntroductionCard);
+        }
+
+        private CatalogCard GetCard(string listName, string cardName)
+        {
+            var listId = _catalog.Lists.First(l => l.Name == listName).Id;
+            return _catalog.Cards.First(c => c.ListId == listId && c.Name == cardName);
+        }
+
+        private string GetCardDescription(string listName, string cardName)
+        {
+            var plain = GetCard(listName, cardName).Description;
+            var list = plain.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            return "<p>" + string.Join("</p>\n\n<p>", list) + "</p>";
+        }
+
+        private IEnumerable<string> GetAcknowledgementList()
+        {
+            var card = GetCard(_catalogSettings.Overview.List, _catalogSettings.Overview.AcknowledgementCard);
+            var checklist = GetChecklist(card.ChecklistIds.First());
+            return checklist.ChecklistItems.Select(i => i.Name);
+        }
+
+        private CatalogChecklist GetChecklist(string checklistId) => _catalog.Checklists.First(l => l.Id == checklistId);
     }
 }

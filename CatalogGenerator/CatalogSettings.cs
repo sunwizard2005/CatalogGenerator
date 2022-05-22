@@ -17,6 +17,7 @@ namespace CatalogGenerator
         public FormatSettings Format { get; set; } = new FormatSettings();
         public OtherSettings Other { get; set; } = new OtherSettings();
         public IEnumerable<string>? IgnoreLists { get; set; }
+        public OverviewSettings Overview { get; set; } = new OverviewSettings();
     }
 
     public class SizeSettings
@@ -61,5 +62,13 @@ namespace CatalogGenerator
         public string HTML { get; set; } = null!;
         public string Description { get; set; } = null!;
         public bool HideInIconKey { get; set; }
+    }
+
+    public class OverviewSettings
+    {
+        public string List { get; set; } = null!;
+        public string IntroductionCard { get; set; } = null!;
+        public string AcknowledgementCard { get; set; } = null!;
+        public string DisclaimerCard { get; set; } = null!;
     }
 }

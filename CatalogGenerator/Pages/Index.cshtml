@@ -9,62 +9,25 @@
     <h1>2022 Spring Auction</h1>
 
     <h2>1. Introduction</h2>
-    <p>
-        Welcome to the @(Model.AuctionName).  The auction represents one of the Atlanta
-        Orchid Society’s main fundraising events, which helps fund our annual show and
-        sale in the spring, as well as our monthly educational programs.
-    </p>
-
-    <p>
-        This year, Carson Barnes, Danny Lentz, David Mellard, and Mark Reinke have put together
-        a nice collection of orchids for our auction.  In this booklet, we have pulled
-        together an alphabetical list with pictures and basic cultural information for some
-        of the plants that will be up for auction.  Not everything available is in this book,
-        and some items that are in this book might not be auctioned off tonight due to either
-        time constraints or other reasons. Carson Barnes and David Mellard are our Auctioneers
-        this year.
-    </p>
-
-    <p>
-        A digital copy of this booklet may be obtained by emailing Jason Mills.  It
-        is also available online at <a href="http://www.twyst.org/atlos/">
-            http://www.twyst.org/atlos/
-        </a>
-    </p>
+    @Html.Raw(Model.IntroductionText)
 
     <h2>2. Acknowledgements</h2>
-    <p>
-        Many of the plants were either donated to the Society, or provided to us at a
-        significant discount. Some of the people and businesses involved in helping us
-        with the auction this year include, but are not limited to, the following. Thank you
-        to everyone who donated or who is helping with the auction.
-    </p>
+    @Html.Raw(Model.AcknowledgementText)
 
     <div class="columns3">
         <ul>
-            <li>Atlanta Botanical Gardens</li>
-            <li>Danny Lentz &amp; Dianne Morgan</li>
-            <li>Carson Barnes</li>
-            <li>David Mellard</li>
-            <li>Exotic Orchids of Maui</li>
-            <li>Malika Orchids</li>
-            <li>Mark Reinke &amp; Gary Collier, Marble Branch Farms</li>
-            <li>Orchid Eros</li>
-            <li>Peach State Orchids</li>
+            @{
+                foreach (var contributor in Model.AcknowledgementList)
+                {
+                    <li>@contributor</li>
+                }
+            }
         </ul>
     </div>
+    <br/>
 
     <h2>3. Disclaimers</h2>
-    <p>
-        We do not claim ownership of the photos used in this booklet, and believe
-        this work to be in compliance with fair use exclusions.
-    </p>
-
-    <p>
-        Cultural information is a basic guideline and may or may not be accurate.
-        Please validate any of the information herein with your own research and the
-        conditions of your growing space.
-    </p>
+    @Html.Raw(Model.DisclaimersText)
 
     <h2>4. Icon Keys</h2>
     <table>
