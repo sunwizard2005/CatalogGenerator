@@ -37,7 +37,7 @@ namespace CatalogGenerator.Pages
 
         }
 
-        public string AuctionName => "2020 spring auction";
+        public string AuctionName => _catalogSettings.AuctionName;
 
         public IEnumerable<Label> TemperatureLabels => _temperatureLabels ??= GetTemperatureLabels();
 

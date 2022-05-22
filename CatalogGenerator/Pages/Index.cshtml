@@ -1,12 +1,12 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "The Atlanta Orchid Society - 2022 Spring Auction";
+    ViewData["Title"] = "The Atlanta Orchid Society - " + Model.AuctionName;
 }
 
 <div class="columns2">
     <img class="logo" src="logo.png" />
-    <h1>2022 Spring Auction</h1>
+    <h1>@Model.AuctionName</h1>
 
     <h2>1. Introduction</h2>
     @Html.Raw(Model.IntroductionText)

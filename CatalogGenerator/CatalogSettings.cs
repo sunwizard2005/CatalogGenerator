@@ -9,6 +9,7 @@ namespace CatalogGenerator
     public class CatalogSettings
     {
         public string TrelloId { get; set; } = null!;
+        public string AuctionName { get; set; } = null!;
         public SizeSettings Size { get; set; } = new SizeSettings();
         public BloomingSettings Blooming { get; set; } = new BloomingSettings();
         public TemperatureSettings Temperature { get; set; } = new TemperatureSettings();
