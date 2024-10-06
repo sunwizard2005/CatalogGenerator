@@ -1,0 +1,323 @@
+@page "/catalog/{auctionKey}"
+@using Microsoft.Extensions.Options
+@using OrchidSocietyAuctions.Trello
+@using RestSharp
+
+@inject IOptionsMonitor<AuctionSettings> OptionsMonitor
+
+@if (Model is null)
+{
+    <PageTitle>Loading...</PageTitle>
+    <RadzenText TextStyle="TextStyle.DisplayH3">Loading...</RadzenText>
+}
+else
+{
+    <PageTitle>@_settings?.SocietyName - @_auction?.Title</PageTitle>
+
+    <div class="columns2">
+        <img class="logo" src="logo.png" alt="Society Logo"/>
+        <h1>@_auction?.Title</h1>
+
+        <h2>1. Introduction</h2>
+        @((MarkupString)IntroductionText)
+
+        <h2>2. Acknowledgements</h2>
+        @((MarkupString)AcknowledgementText)
+
+        <div class="columns3">
+            <ul>
+                @{
+                    foreach (var contributor in AcknowledgementList)
+                    {
+                        <li>@contributor</li>
+                    }
+                }
+            </ul>
+        </div>
+        <br/>
+
+        <h2>3. Disclaimers</h2>
+        @((MarkupString)DisclaimersText)
+
+        <h2>4. Icon Keys</h2>
+        <table>
+            <tr>
+                <th>Temperature</th><th>Other</th>
+            </tr>
+            <tr>
+                <td id="temperature" class="desc">
+                    <table>
+                        @{
+                            foreach (var t in VisibleTemperatureLabels)
+                            {
+                                @OutputLabel(t)
+                                ;
+                            }
+                        }
+                    </table>
+                </td>
+                <td id="other" class="desc">
+                    <table>
+                        @{
+                            foreach (var l in VisibleMiscLabels)
+                            {
+                                @OutputLabel(l)
+                                ;
+                            }
+                        }
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <th>Light</th><th>Watering</th>
+            </tr>
+            <tr>
+                <td id="light" class="desc">
+                    <table>
+                        @{
+                            foreach (var l in VisibleLightingLabels)
+                            {
+                                @OutputLabel(l)
+                                ;
+                            }
+                        }
+                    </table>
+                </td>
+                <td id="water" class="desc">
+                    <table>
+                        @{
+                            foreach (var l in VisibleWateringLabels)
+                            {
+                                @OutputLabel(l)
+                                ;
+                            }
+                        }
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+            </tr>
+        </table>
+
+        <h2>5. Plant List</h2>
+        <div id="plants">
+            @{
+                foreach (var val in Model.Cards)
+                {
+                    if (_auction!.IgnoreLists.Contains(Model.Lists.Where(l => l.Id == val.ListId).FirstOrDefault()?.Name)) continue;
+
+                    <table class="plant-table">
+                        <tr>
+                            <td colspan="2">
+                                <h3>@val.Name</h3>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="photo" rowspan="3">
+                                @if (val.Attachments.Any())
+                                {
+                                    <img class="photo" src="@val.Attachments.First().Url" alt="Example Photo"/>
+                                }
+                            </td>
+                            <td class="attrib">
+                                @{
+                                    foreach (var label in GetBloomingLabels()
+                                                 .Union(GetTemperatureLabels())
+                                                 .Union(GetLightingLabels())
+                                                 .Union(GetWateringLabels())
+                                                 .Union(GetSizeLabels())
+                                                 .Union(GetFormatLabels()))
+                                    {
+                                        if (val.LabelIds?.Contains(label.Id) == true)
+                                        {
+                                            @OutputLabel(label)
+                                            ;
+                                        }
+                                    }
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="desc">
+                                <div class="desc">@val.Description</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="country"></td>
+                        </tr>
+                    </table>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter] public string AuctionKey { get; set; } = null!;
+
+    public string Title { get; set; } = null!;
+    private Catalog? Model { get; set; } = null!;
+
+    private AuctionSettings? _settings;
+    private AuctionBoard? _auction;
+
+    private string IntroductionText => GetIntroductionText();
+    private string AcknowledgementText => GetAcknowledgementText();
+    private IEnumerable<string> AcknowledgementList => GetAcknowledgementList();
+    private string DisclaimersText => GetDisclaimersText();
+
+    private IEnumerable<Label> VisibleTemperatureLabels => TemperatureLabels.Where(l => l.VisibleInIconKey);
+    private IEnumerable<Label> VisibleMiscLabels => MiscLabels.Where(l => l.VisibleInIconKey);
+    private IEnumerable<Label> VisibleLightingLabels => LightingLabels.Where(l => l.VisibleInIconKey);
+    private IEnumerable<Label> VisibleWateringLabels => WateringLabels.Where(l => l.VisibleInIconKey);
+
+    private IEnumerable<Label> TemperatureLabels => GetTemperatureLabels();
+    private IEnumerable<Label> MiscLabels => GetMiscLabels();
+    private IEnumerable<Label> LightingLabels => GetLightingLabels();
+    private IEnumerable<Label> WateringLabels => GetWateringLabels();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        OptionsMonitor.OnChange(v =>
+        {
+            _settings = v;
+            GetAuction();
+        });
+        _settings = OptionsMonitor.CurrentValue;
+        GetAuction();
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        GetCatalogAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+    }
+
+    private void GetAuction()
+    {
+        _auction = _settings!.Auctions.FirstOrDefault(a => a.Key == AuctionKey);
+        Title = _auction?.Title ?? "Auction not found";
+        StateHasChanged();
+    }
+
+    private async Task GetCatalogAsync()
+    {
+        var client = new RestClient("https://trello.com");
+        var request = new RestRequest($"/b/{AuctionKey}.json", Method.Get);
+        var response = await client.ExecuteAsync<Catalog>(request) ?? throw new Exception("Unable to load catalog");
+
+        Model = response.Data;
+        StateHasChanged();
+    }
+
+    private string GetIntroductionText()
+    {
+        return GetCardDescription(_auction!.Overview.List, _auction.Overview.IntroductionCard);
+    }
+
+    private string GetAcknowledgementText()
+    {
+        return GetCardDescription(_auction!.Overview.List, _auction.Overview.AcknowledgementCard);
+    }
+
+    private string GetDisclaimersText()
+    {
+        return GetCardDescription(_auction!.Overview.List, _auction.Overview.DisclaimerCard);
+    }
+
+    private string GetCardDescription(string listName, string cardName)
+    {
+        var plain = GetCard(listName, cardName).Description;
+        var list = plain.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        return $"<p>{string.Join("</p>\n\n<p>", list)}</p>";
+    }
+
+    private IEnumerable<string> GetAcknowledgementList()
+    {
+        var card = GetCard(_auction!.Overview.List, _auction.Overview.AcknowledgementCard);
+        var checklist = GetChecklist(card.ChecklistIds.First());
+        return checklist.ChecklistItems.Select(c => c.Name);
+    }
+
+    private CatalogCard GetCard(string listName, string cardName)
+    {
+        var listId = Model!.Lists.First(l => l.Name == listName).Id;
+        return Model.Cards.First(c => c.ListId == listId && c.Name == cardName);
+    }
+
+    private CatalogChecklist GetChecklist(string checklistId)
+    {
+        return Model!.Checklists.First(c => c.Id == checklistId);
+    }
+
+    private IEnumerable<Label> GetTemperatureLabels() => GetLabels(_settings!.Temperature.Labels);
+
+    private IEnumerable<Label> GetMiscLabels()
+    {
+        var formats = GetFormatLabels().ToList();
+
+        return
+            GetBloomingLabels().Where(l => l.VisibleInIconKey)
+                .Union(GetOtherLabels().Where(l => l.VisibleInIconKey))
+                .Union(GetSizeLabels().Where(l => l.VisibleInIconKey))
+                .Union(new List<Label>
+                {
+                    new Label
+                    {
+                        Description = "Size",
+                        Classes = ["tag", "format"],
+                        Text = formats.First().Text + "&nbsp;-" + formats.SkipLast(1).Last().Text,
+                        VisibleInIconKey = true
+                    },
+                    formats.Last()
+                });
+    }
+
+    private IEnumerable<Label> GetBloomingLabels() => GetLabels(_settings!.Blooming.Labels);
+    private IEnumerable<Label> GetLightingLabels() => GetLabels(_settings!.Lighting.Labels);
+    private IEnumerable<Label> GetWateringLabels() => GetLabels(_settings!.Watering.Labels);
+    private IEnumerable<Label> GetSizeLabels() => GetLabels(_settings!.Size.Labels);
+    private IEnumerable<Label> GetFormatLabels() => GetLabels(_settings!.Format.Labels);
+    private IEnumerable<Label> GetOtherLabels() => GetLabels(_settings!.Other.Labels);
+
+    private IEnumerable<Label> GetLabels(IEnumerable<LabelSetting> labels)
+    {
+        return
+            from l in labels
+            join ml in Model!.Labels on l.TrelloName equals ml.Name
+            select new Label
+            {
+                TrelloName = ml.Name,
+                DisplayName = l.TrelloName,
+                Id = ml.Id,
+                Classes = l.Classes,
+                Text = l.Text,
+                AltText = l.AltText,
+                ImageFiles = l.ImageFiles,
+                Description = l.Description,
+                VisibleInIconKey = !l.HideInIconKey
+            };
+    }
+
+    private RenderFragment OutputLabel(Label label)
+    {
+        return
+            @<tr>
+                <td>
+                    <span class="@(string.Join(' ', label.Classes))">
+                        @foreach (var img in label.ImageFiles)
+                        {
+                            <img src="@img" alt="@label.AltText"/>
+                        }
+                        @label.Text
+                    </span>
+                </td>
+                <td>
+                    @label.Description
+                </td>
+            </tr>;
+    }
+
+}

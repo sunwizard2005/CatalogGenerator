@@ -1,0 +1,54 @@
+﻿@page "/"
+@using Microsoft.Extensions.Options
+
+@inject IOptionsMonitor<AuctionSettings> OptionsMonitor
+@inject NavigationManager NavigationManager
+
+<RadzenText TextStyle="TextStyle.DisplayH3">Auctions</RadzenText>
+
+@if (_boardsList is null)
+{
+    <RadzenText>Loading...</RadzenText>
+}
+else
+{
+    <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap">
+        @foreach (var auction in _boardsList)
+        {
+            <RadzenButton Style="width: 250px; height: 150px" Click="async (args) => await OpenCatalog(args, auction.Key)" ButtonStyle="ButtonStyle.Primary" Text="@auction.Title" />
+        }
+    </RadzenStack>
+}
+
+
+@code
+{
+    private AuctionBoard[]? _boardsList;
+    private AuctionSettings? _settings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        OptionsMonitor.OnChange(v =>
+        {
+            _settings = v;
+            GetBoards();
+        });
+        _settings = OptionsMonitor.CurrentValue;
+        GetBoards();
+    }
+
+    private void GetBoards()
+    {
+        _boardsList = _settings!.Auctions;
+        StateHasChanged();
+    }
+
+    private Task OpenCatalog(MouseEventArgs args, string auctionKey)
+    {
+        NavigationManager.NavigateTo($"/auction/{auctionKey}");
+        return Task.CompletedTask;
+    }
+}
+

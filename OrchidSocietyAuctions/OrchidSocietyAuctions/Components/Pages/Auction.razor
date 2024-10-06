@@ -1,0 +1,68 @@
+@page "/auction/{auctionKey}"
+@using Microsoft.Extensions.Options
+@using OrchidSocietyAuctions
+
+@inject IOptionsMonitor<AuctionSettings> OptionsMonitor
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<RadzenStack>
+    <RadzenRow>
+        <RadzenLink Path="/">
+            <RadzenStack Orientation="Orientation.Horizontal">
+                <RadzenIcon Icon="back"/>
+                <RadzenIcon>Back</RadzenIcon>
+            </RadzenStack>
+        </RadzenLink>
+    </RadzenRow>
+    <RadzenRow>
+        <RadzenText TextStyle="TextStyle.DisplayH3">@Title</RadzenText>
+    </RadzenRow>
+    <RadzenRow>
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenButton Click="() => ViewCatalog()" ButtonStyle="ButtonStyle.Primary" Icon="print" Text="Catalog"/>
+
+            <RadzenButton Click="() => ViewTrello()" ButtonStyle="ButtonStyle.Primary" Text="Trello"/>
+        </RadzenStack>
+    </RadzenRow>
+</RadzenStack>
+
+@code
+{
+    [Parameter] public string AuctionKey { get; set; } = null!;
+
+    public string Title { get; set; } = null!;
+
+    private AuctionSettings? _settings;
+    private AuctionBoard? _auction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        OptionsMonitor.OnChange(v =>
+        {
+            _settings = v;
+            GetAuction();
+        });
+        _settings = OptionsMonitor.CurrentValue;
+        GetAuction();
+    }
+
+    private void GetAuction()
+    {
+        _auction = _settings!.Auctions.FirstOrDefault(a => a.Key == AuctionKey);
+        Title = _auction?.Title ?? "Auction not found";
+        StateHasChanged();
+    }
+
+    private async Task ViewCatalog()
+    {
+        await JSRuntime.InvokeVoidAsync("open", $"/catalog/{AuctionKey}", "_blank");
+    }
+
+    private async Task ViewTrello()
+    {
+        await JSRuntime.InvokeAsync<object>("open", $"https://trello.com/b/{_auction?.Key}", "_blank");
+    }
+}
