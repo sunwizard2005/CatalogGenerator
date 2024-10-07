@@ -110,7 +110,7 @@ else
                 {
                     <h3>@list.Name</h3>
 
-                    foreach (var val in _catalog.Cards.Where(c => c.ListId == list.Id).OrderBy(c => c.Name))
+                    foreach (var val in _catalog.Cards.Where(c => c.ListId == list.Id && !c.Closed).OrderBy(c => c.Name))
                     {
                         <table class="plant-table">
                             <tr>
