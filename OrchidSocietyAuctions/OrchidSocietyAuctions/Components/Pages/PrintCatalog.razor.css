@@ -36,6 +36,7 @@ td.country {
 img.photo {
     max-width: 150px;
     max-height: 150px;
+    padding-right: 10px;
 }
 
 img {
@@ -107,6 +108,13 @@ h1 {
 
 h3 {
     border-top: 1px #4F81BD solid;
+    padding-top: 50px;
+    text-align: center;
+}
+
+h4 {
+    border-top: 1px #4F81BD solid;
+    padding-top: 10px;
 }
 
 div.columns2 {

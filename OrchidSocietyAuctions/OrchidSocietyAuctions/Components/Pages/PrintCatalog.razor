@@ -1,11 +1,13 @@
 @page "/catalog/{auctionKey}"
+@using System.Text.RegularExpressions
+@using Microsoft.AspNetCore.Mvc.Razor
 @using Microsoft.Extensions.Options
 @using OrchidSocietyAuctions.Trello
 @using RestSharp
 
 @inject IOptionsMonitor<AuctionSettings> OptionsMonitor
 
-@if (Model is null)
+@if (_catalog is null)
 {
     <PageTitle>Loading...</PageTitle>
     <RadzenText TextStyle="TextStyle.DisplayH3">Loading...</RadzenText>
@@ -19,10 +21,10 @@ else
         <h1>@_auction?.Title</h1>
 
         <h2>1. Introduction</h2>
-        @((MarkupString)IntroductionText)
+        @IntroductionText
 
         <h2>2. Acknowledgements</h2>
-        @((MarkupString)AcknowledgementText)
+        @AcknowledgementText
 
         <div class="columns3">
             <ul>
@@ -37,7 +39,7 @@ else
         <br/>
 
         <h2>3. Disclaimers</h2>
-        @((MarkupString)DisclaimersText)
+        @DisclaimersText
 
         <h2>4. Icon Keys</h2>
         <table>
@@ -51,7 +53,6 @@ else
                             foreach (var t in VisibleTemperatureLabels)
                             {
                                 @OutputLabel(t)
-                                ;
                             }
                         }
                     </table>
@@ -62,7 +63,6 @@ else
                             foreach (var l in VisibleMiscLabels)
                             {
                                 @OutputLabel(l)
-                                ;
                             }
                         }
                     </table>
@@ -78,7 +78,6 @@ else
                             foreach (var l in VisibleLightingLabels)
                             {
                                 @OutputLabel(l)
-                                ;
                             }
                         }
                     </table>
@@ -89,7 +88,6 @@ else
                             foreach (var l in VisibleWateringLabels)
                             {
                                 @OutputLabel(l)
-                                ;
                             }
                         }
                     </table>
@@ -103,50 +101,60 @@ else
         <h2>5. Plant List</h2>
         <div id="plants">
             @{
-                foreach (var val in Model.Cards)
-                {
-                    if (_auction!.IgnoreLists.Contains(Model.Lists.Where(l => l.Id == val.ListId).FirstOrDefault()?.Name)) continue;
+                var lists = from l in _catalog.Lists
+                    where !_auction!.IgnoreLists.Contains(l.Name)
+                    orderby l.Name
+                    select l;
 
-                    <table class="plant-table">
-                        <tr>
-                            <td colspan="2">
-                                <h3>@val.Name</h3>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="photo" rowspan="3">
-                                @if (val.Attachments.Any())
-                                {
-                                    <img class="photo" src="@val.Attachments.First().Url" alt="Example Photo"/>
-                                }
-                            </td>
-                            <td class="attrib">
-                                @{
-                                    foreach (var label in GetBloomingLabels()
-                                                 .Union(GetTemperatureLabels())
-                                                 .Union(GetLightingLabels())
-                                                 .Union(GetWateringLabels())
-                                                 .Union(GetSizeLabels())
-                                                 .Union(GetFormatLabels()))
-                                    {
-                                        if (val.LabelIds?.Contains(label.Id) == true)
-                                        {
-                                            @OutputLabel(label)
-                                            ;
-                                        }
-                                    }
-                                }
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="desc">
-                                <div class="desc">@val.Description</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="country"></td>
-                        </tr>
-                    </table>
+                foreach (var list in lists)
+                {
+                    <h3>@list.Name</h3>
+
+                    foreach (var val in _catalog.Cards.Where(c => c.ListId == list.Id).OrderBy(c => c.Name))
+                    {
+                        <table class="plant-table">
+                            <tr>
+                                <td colspan="2">
+                                    <h4>@val.Name</h4>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <table>
+                                        <tr>
+                                            <td class="photo" rowspan="3">
+                                                @if (val.Attachments.Any())
+                                                {
+                                                    <img class="photo" src="@val.Attachments.First().Url" alt="Example Photo"/>
+                                                }
+                                            </td>
+                                            <td class="attrib">
+                                                @{
+                                                    foreach (var label in GetBloomingLabels()
+                                                                 .Union(GetTemperatureLabels())
+                                                                 .Union(GetLightingLabels())
+                                                                 .Union(GetWateringLabels())
+                                                                 .Union(GetSizeLabels())
+                                                                 .Union(GetFormatLabels()))
+                                                    {
+                                                        if (val.LabelIds?.Contains(label.Id) == true)
+                                                        {
+                                                            @OutputLabel(label)
+                                                        }
+                                                    }
+                                                }
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="desc">
+                                    <div class="desc">@RenderMarkup(val.Description)</div>
+                                </td>
+                            </tr>
+                        </table>
+                    }
                 }
             }
         </div>
@@ -157,16 +165,15 @@ else
 
     [Parameter] public string AuctionKey { get; set; } = null!;
 
-    public string Title { get; set; } = null!;
-    private Catalog? Model { get; set; } = null!;
+    private Catalog? _catalog;
 
     private AuctionSettings? _settings;
     private AuctionBoard? _auction;
 
-    private string IntroductionText => GetIntroductionText();
-    private string AcknowledgementText => GetAcknowledgementText();
+    private RenderFragment IntroductionText => GetIntroductionText();
+    private RenderFragment AcknowledgementText => GetAcknowledgementText();
     private IEnumerable<string> AcknowledgementList => GetAcknowledgementList();
-    private string DisclaimersText => GetDisclaimersText();
+    private RenderFragment DisclaimersText => GetDisclaimersText();
 
     private IEnumerable<Label> VisibleTemperatureLabels => TemperatureLabels.Where(l => l.VisibleInIconKey);
     private IEnumerable<Label> VisibleMiscLabels => MiscLabels.Where(l => l.VisibleInIconKey);
@@ -198,7 +205,6 @@ else
     private void GetAuction()
     {
         _auction = _settings!.Auctions.FirstOrDefault(a => a.Key == AuctionKey);
-        Title = _auction?.Title ?? "Auction not found";
         StateHasChanged();
     }
 
@@ -208,30 +214,29 @@ else
         var request = new RestRequest($"/b/{AuctionKey}.json", Method.Get);
         var response = await client.ExecuteAsync<Catalog>(request) ?? throw new Exception("Unable to load catalog");
 
-        Model = response.Data;
+        _catalog = response.Data;
         StateHasChanged();
     }
 
-    private string GetIntroductionText()
+    private RenderFragment GetIntroductionText()
     {
         return GetCardDescription(_auction!.Overview.List, _auction.Overview.IntroductionCard);
     }
 
-    private string GetAcknowledgementText()
+    private RenderFragment GetAcknowledgementText()
     {
         return GetCardDescription(_auction!.Overview.List, _auction.Overview.AcknowledgementCard);
     }
 
-    private string GetDisclaimersText()
+    private RenderFragment GetDisclaimersText()
     {
         return GetCardDescription(_auction!.Overview.List, _auction.Overview.DisclaimerCard);
     }
 
-    private string GetCardDescription(string listName, string cardName)
+    private RenderFragment GetCardDescription(string listName, string cardName)
     {
         var plain = GetCard(listName, cardName).Description;
-        var list = plain.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        return $"<p>{string.Join("</p>\n\n<p>", list)}</p>";
+        return RenderMarkup(plain);
     }
 
     private IEnumerable<string> GetAcknowledgementList()
@@ -243,13 +248,13 @@ else
 
     private CatalogCard GetCard(string listName, string cardName)
     {
-        var listId = Model!.Lists.First(l => l.Name == listName).Id;
-        return Model.Cards.First(c => c.ListId == listId && c.Name == cardName);
+        var listId = _catalog!.Lists.First(l => l.Name == listName).Id;
+        return _catalog.Cards.First(c => c.ListId == listId && c.Name == cardName);
     }
 
     private CatalogChecklist GetChecklist(string checklistId)
     {
-        return Model!.Checklists.First(c => c.Id == checklistId);
+        return _catalog!.Checklists.First(c => c.Id == checklistId);
     }
 
     private IEnumerable<Label> GetTemperatureLabels() => GetLabels(_settings!.Temperature.Labels);
@@ -268,7 +273,7 @@ else
                     {
                         Description = "Size",
                         Classes = ["tag", "format"],
-                        Text = formats.First().Text + "&nbsp;-" + formats.SkipLast(1).Last().Text,
+                        Text = formats.First().Text + " - " + formats.SkipLast(1).Last().Text,
                         VisibleInIconKey = true
                     },
                     formats.Last()
@@ -286,7 +291,7 @@ else
     {
         return
             from l in labels
-            join ml in Model!.Labels on l.TrelloName equals ml.Name
+            join ml in _catalog!.Labels on l.TrelloName equals ml.Name
             select new Label
             {
                 TrelloName = ml.Name,
@@ -318,6 +323,121 @@ else
                     @label.Description
                 </td>
             </tr>;
+    }
+
+    private RenderFragment RenderMarkup(string inputText)
+    {
+        return __builder =>
+        {
+            var list = inputText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in list)
+            {
+                <p>
+                    @RenderMarkupLine(line)
+                </p>
+            }
+        };
+    }
+
+    private (int pos, string token) CheckToken(string text, string search, (int pos, string token) token)
+    {
+        var i = text.IndexOf(search, StringComparison.Ordinal);
+        if (i >= 0 && i < token.pos) return (i, search);
+        return token;
+    }
+
+    private Regex linkLong = new Regex("[[](.*?)][(](.*?) \"(.*?)\"[)]");
+    private Regex linkShort = new Regex("[[](.*?)][(](.*?)[)]");
+
+    private RenderFragment RenderMarkupLine(string line)
+    {
+        return __builder =>
+        {
+            var text = line;
+            while (!string.IsNullOrEmpty(text))
+            {
+                (int pos, string token) token = (int.MaxValue, "");
+                token = CheckToken(text, "***", token);
+                token = CheckToken(text, "___", token);
+                token = CheckToken(text, "**", token);
+                token = CheckToken(text, "__", token);
+                token = CheckToken(text, "*", token);
+                token = CheckToken(text, "_", token);
+
+                var longMatch = linkLong.Match(text);
+                var shortMatch = linkShort.Match(text);
+                if (longMatch.Success && longMatch.Index < token.pos) token = (longMatch.Index, "l");
+                if (shortMatch.Success && shortMatch.Index < token.pos) token = (shortMatch.Index, "s");
+
+                if (string.IsNullOrEmpty(token.token))
+                {
+                    @text
+                    text = string.Empty;
+                    break;
+                }
+
+                var before = text[..token.pos];
+                if (!string.IsNullOrEmpty(before))
+                {
+                    @before
+                }
+
+
+                if (token.token == "l")
+                {
+                    text = text[(longMatch.Index + longMatch.Length)..];
+                    var linkText = longMatch.Groups[1].Value;
+                    var linkUrl = longMatch.Groups[2].Value;
+                    var linkTitle = longMatch.Groups[3].Value;
+                    <a href="@linkUrl" title="@linkTitle">@linkText</a>
+                    continue;
+                }
+
+                if (token.token == "s")
+                {
+                    text = text[(shortMatch.Index + shortMatch.Length)..];
+                    var linkText = shortMatch.Groups[1].Value;
+                    var linkUrl = shortMatch.Groups[2].Value;
+                    <a href="@linkUrl">@linkText</a>
+                    continue;
+                }
+
+                text = text[(token.pos + token.token.Length)..];
+
+                // find ending token
+                var pos = text.IndexOf(token.token, StringComparison.Ordinal);
+                if (pos < 0)
+                {
+                    @token.token
+                    // continue processing
+                    continue;
+                }
+
+                var inner = text[..pos];
+                text = text[(pos + token.token.Length)..];
+
+                switch (token.token)
+                {
+                    case "***":
+                    case "___":
+                        <strong>
+                            <em>@RenderMarkupLine(inner)</em>
+                        </strong>
+                        break;
+                    case "**":
+                    case "__":
+                        <strong>@RenderMarkupLine(inner)</strong>
+                        break;
+                    case "*":
+                    case "_":
+                        <em>@RenderMarkupLine(inner)</em>
+                        break;
+                    default:
+                        @RenderMarkupLine(inner)
+                        break;
+                }
+            }
+        };
     }
 
 }
