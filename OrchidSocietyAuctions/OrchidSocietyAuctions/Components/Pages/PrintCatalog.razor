@@ -242,6 +242,9 @@ else
     private IEnumerable<string> GetAcknowledgementList()
     {
         var card = GetCard(_auction!.Overview.List, _auction.Overview.AcknowledgementCard);
+        
+        if (!card.ChecklistIds.Any()) return [];
+        
         var checklist = GetChecklist(card.ChecklistIds.First());
         return checklist.ChecklistItems.Select(c => c.Name);
     }
